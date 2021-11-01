@@ -138,4 +138,5 @@ dmypy.json
 cython_debug/
 
 # custom
-
+data/*
+!data/README.md
