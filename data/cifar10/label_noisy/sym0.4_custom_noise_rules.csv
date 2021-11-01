@@ -1,0 +1,11 @@
+,src,dsts,p
+0,airplane,"['automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']",0.4
+1,automobile,"['airplane', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']",0.4
+2,bird,"['airplane', 'automobile', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']",0.4
+3,cat,"['airplane', 'automobile', 'bird', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']",0.4
+4,deer,"['airplane', 'automobile', 'bird', 'cat', 'dog', 'frog', 'horse', 'ship', 'truck']",0.4
+5,dog,"['airplane', 'automobile', 'bird', 'cat', 'deer', 'frog', 'horse', 'ship', 'truck']",0.4
+6,frog,"['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'horse', 'ship', 'truck']",0.4
+7,horse,"['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'ship', 'truck']",0.4
+8,ship,"['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'truck']",0.4
+9,truck,"['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship']",0.4

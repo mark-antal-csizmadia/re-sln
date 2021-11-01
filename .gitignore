@@ -138,5 +138,8 @@ dmypy.json
 cython_debug/
 
 # custom
-data/*
-!data/README.md
+data/cifar10/cifar-10-batches-py/
+data/cifar10/cifar-10-python.tar.gz
+data/cifar100/cifar-100-python/
+data/cifar100/cifar-100-python.tar.gz
+

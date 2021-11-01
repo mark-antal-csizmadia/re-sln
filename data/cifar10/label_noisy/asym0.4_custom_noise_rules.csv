@@ -1,0 +1,5 @@
+,src,dsts,p
+0,truck,['automobile'],0.4
+1,bird,['airplane'],0.4
+2,cat,['dog'],0.4
+3,dog,['cat'],0.4
