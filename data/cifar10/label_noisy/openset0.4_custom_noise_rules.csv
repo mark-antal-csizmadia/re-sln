@@ -1,2 +1,2 @@
-,src,dst,p
-0,cifar10,cifar100,0.4
+src,dst,p
+cifar10,cifar100,0.4
