@@ -137,13 +137,14 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# custom
-data/cifar10/cifar-10-batches-py/
-data/cifar10/cifar-10-python.tar.gz
-data/cifar100/cifar-100-python/
-data/cifar100/cifar-100-python.tar.gz
-*.npy
+# custom, exclude data but not readme
+data/
+!data/README.md
 
-# exclude Tensorboard stuff for now
+# exclude Tensorboard stuff for now but not readme
 runs/
+!runs/README.md
 
+# exclude runs but not readme
+saved_models/
+!saved_models/README.md
