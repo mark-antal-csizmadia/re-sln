@@ -661,6 +661,7 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
         test_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(means, stds)])
 
         train_dataset = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        train_dataset_original = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
         test_dataset = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=False, transform=test_transform)
 
     elif dataset_name == "cifar100":
@@ -674,6 +675,7 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
         test_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(means, stds)])
 
         train_dataset = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        train_dataset_original = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
         test_dataset = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=False, transform=test_transform)
     else:
         raise Exceptiion
@@ -689,4 +691,4 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
 
     train_dataset, indices_noisy, noise_rules = add_inherent_label_noise(train_dataset, datapath, dataset_name, noise_mode, p, custom_noise)
     
-    return train_dataset, indices_noisy, noise_rules, test_dataset
+    return train_dataset, train_dataset_original, indices_noisy, noise_rules, test_dataset
