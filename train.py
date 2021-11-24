@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import torch
 import torch.nn.functional as F
+import numpy as np
 
 
 def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs):
