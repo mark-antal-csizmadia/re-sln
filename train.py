@@ -4,23 +4,26 @@ import torch.nn.functional as F
 import numpy as np
 
 
-def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs):
+def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs, indices_noisy):
     # train mode for model e.g.: dropout, batch norm etc
     model.train()
     
     # record loss per epoch
     loss_epoch_sum = 0.0
+    loss_noisy_epoch_sum = 0.0
+    loss_clean_epoch_sum = 0.0
     correct_predictions_epoch_sum = 0
     
     # n instances in training set
     n_batches = len(train_dataloader)
     n_data = len(train_dataloader.dataset)
+    n_noisy_all = indices_noisy.sum()
     
     # tqdm
     train_dataloader_tqdm = tqdm(enumerate(train_dataloader), total=n_batches)
     train_dataloader_tqdm.set_description(f"staring epoch={n_epoch}/{n_epochs}")
     
-    for n_batch, (data_batch, targets_batch_one_hot) in train_dataloader_tqdm:
+    for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in train_dataloader_tqdm:
         # since zero-indexed
         n_batch += 1
         batch_size = data_batch.size(0)
@@ -41,7 +44,14 @@ def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma,
         logits_batch = model(data_batch)
         # get cross entropy (ce) loss, i.e.: negative log-lieklihood
         # use log of softmax for numerical stability and calucalte the cross entropy loss manually
-        loss_batch = -torch.mean(torch.sum(F.log_softmax(logits_batch, dim=1)*targets_batch_one_hot, dim=1))
+        losses_batch = -torch.sum(F.log_softmax(logits_batch, dim=1)*targets_batch_one_hot, dim=1)
+        loss_batch = torch.mean(losses_batch)
+        
+        n_noisy = indices_noisy[idx_batch.numpy()].sum()
+        
+        loss_batch_noisy = torch.mean(losses_batch[indices_noisy[idx_batch.numpy()]])
+        loss_batch_clean = torch.mean(losses_batch[np.invert(indices_noisy[idx_batch.numpy()])])
+        
         # get predictions
         predictions_batch = logits_batch.argmax(dim=1, keepdim=True).to(device)
         # get correct predictions (boolean vector, True if correct), view predictions_batch as targets_batch
@@ -64,6 +74,8 @@ def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma,
         # accumulate loss per batch, i.e.: add the loss per batch batch_size times
         # eventually mean is computed loss is computed by dividing by the datset size
         loss_epoch_sum += batch_size * loss_batch.item()
+        loss_noisy_epoch_sum += n_noisy * loss_batch_noisy.item()
+        loss_clean_epoch_sum += (batch_size - n_noisy) * loss_batch_clean.item()
         
         # tqdm
         train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, "
@@ -73,10 +85,12 @@ def train_loop(model, device, train_dataloader, optimizer, optimizer_ema, sigma,
     
     # compute loss per epoch as the mean of the loss_batches
     loss_epoch = loss_epoch_sum / n_data
+    loss_noisy_epoch = loss_noisy_epoch_sum / n_noisy_all
+    loss_clean_epoch = loss_clean_epoch_sum / (n_data - n_noisy_all)
     # accuracy epoch
     accuracy_epoch = correct_predictions_epoch_sum / n_data
     
-    return loss_epoch, accuracy_epoch
+    return loss_epoch, accuracy_epoch, loss_noisy_epoch, loss_clean_epoch
 
 def test_loop(model, device, test_dataloader, n_epoch, n_epochs):
     # eval mode for test
@@ -94,7 +108,7 @@ def test_loop(model, device, test_dataloader, n_epoch, n_epochs):
     test_dataloader_tqdm.set_description(f"\teval test set at n_epoch={n_epoch}/{n_epochs}")
     
     with torch.no_grad():
-        for n_batch, (data_batch, targets_batch_one_hot) in test_dataloader_tqdm:
+        for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in test_dataloader_tqdm:
             # since zero-indexed
             n_batch += 1
             batch_size = data_batch.size(0)
@@ -156,7 +170,7 @@ def get_lc_params(model_ema, train_eval_dataloader, device):
     # impacts the autograd engine and deactivate it. It will reduce memory usage and speed 
     # up computations but you won’t be able to backprop (which you don’t want in an eval script).
     with torch.no_grad():
-        for n_batch, (data_batch, targets_batch_one_hot) in train_eval_dataloader_tqdm:
+        for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in train_eval_dataloader_tqdm:
             # since zero-indexed
             n_batch += 1
             # put tensors onto device
