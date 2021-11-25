@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
+from torch.utils.data import Dataset
+import torch
+from PIL import Image
 
 
 def get_normalization_params(dataset_name, datapath):
@@ -640,6 +643,55 @@ def check_combos(dataset_name, noise_mode, custom_noise):
     cond_fail = cond_fail_1 or cond_fail_2 or cond_fail_3
     assert not cond_fail, f"Incorrect combo: dataset_name:{dataset_name}, noise_mode:{noise_mode}, custom_noise:{custom_noise}"
     
+
+class CIFAR10(Dataset):
+    def __init__(self, root, train, transform, download):
+        self.cifar10 = datasets.CIFAR10(root=root,
+                                        download=download,
+                                        train=train)
+        self.targets = self.cifar10.targets
+        self.class_to_idx = self.cifar10.class_to_idx
+        self.data = self.cifar10.data
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        if torch.is_tensor(index):
+            index = index.tolist()
+            
+        """Same as built-in cifar10, but return indices for knowing instance id s for plotting loss
+        of noisy and clean samples"""
+        data = self.transform(Image.fromarray(self.data[index]))
+        target = self.targets[index]
+        # Your transformations here (or set it in CIFAR10)
+        
+        return data, target, index
+
+    def __len__(self):
+        return len(self.cifar10)
+    
+
+class CIFAR100(Dataset):
+    def __init__(self, root, train, transform, download):
+        self.cifar100 = datasets.CIFAR100(root=root,
+                                         download=download,
+                                         train=train)
+        self.targets = self.cifar100.targets
+        self.class_to_idx = self.cifar100.class_to_idx
+        self.data = self.cifar100.data
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        """Same as built-in cifar100, but return indices for knowing instance id s for plotting loss
+        of noisy and clean samples"""
+        data = self.transform(Image.fromarray(self.data[index]))
+        target = self.targets[index]
+        # Your transformations here (or set it in CIFAR100)
+        
+        return data, target, index
+
+    def __len__(self):
+        return len(self.cifar100)
+    
     
 def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custom_noise):
     # dataset_names ["cifar10", "cifar100"]
@@ -660,9 +712,9 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
 
         test_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(means, stds)])
 
-        train_dataset = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
-        train_dataset_original = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
-        test_dataset = datasets.CIFAR10(os.path.join(datapath, dataset_name), train=False, transform=test_transform)
+        train_dataset = CIFAR10(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        train_dataset_original = CIFAR10(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        test_dataset = CIFAR10(root=os.path.join(datapath, dataset_name), train=False, transform=test_transform, download=True)
 
     elif dataset_name == "cifar100":
         means, stds = get_normalization_params(dataset_name=dataset_name, datapath=datapath)
@@ -674,9 +726,9 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
 
         test_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(means, stds)])
 
-        train_dataset = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
-        train_dataset_original = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
-        test_dataset = datasets.CIFAR100(os.path.join(datapath, dataset_name), train=False, transform=test_transform)
+        train_dataset = CIFAR100(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        train_dataset_original = CIFAR100(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform, download=True)
+        test_dataset = CIFAR100(root=os.path.join(datapath, dataset_name), train=False, transform=test_transform, download=True)
     else:
         raise Exceptiion
 

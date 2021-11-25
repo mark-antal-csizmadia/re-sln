@@ -24,7 +24,7 @@ def test(model, device, dataloader):
     dataloader_tqdm.set_description(f"\teval set")
     
     with torch.no_grad():
-        for n_batch, (data_batch, targets_batch_one_hot) in dataloader_tqdm:
+        for n_batch, (data_batch, targets_batch_one_hot, idx) in dataloader_tqdm:
             # since zero-indexed
             n_batch += 1
             batch_size = data_batch.size(0)
