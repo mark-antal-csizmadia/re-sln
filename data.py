@@ -693,7 +693,7 @@ class CIFAR100(Dataset):
         return len(self.cifar100)
     
     
-def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custom_noise):
+def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custom_noise, seed):
     # dataset_names ["cifar10", "cifar100"]
     # datapath is path to data, make it data/
     # noise_modes ["sym", "asym", "openset", "dependent"]
