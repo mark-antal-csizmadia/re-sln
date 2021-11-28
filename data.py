@@ -133,18 +133,18 @@ def make_inherent_label_noise_openset(datapath, dataset_name, noise_mode, p, see
     labels_df = pd.DataFrame(data={"label": train_dataset.targets, "label_noisy": labels_noisy})
     labels_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.csv" 
     labels_df.to_csv(labels_csv_path, index=False)
-    print(f"{labels_csv_path} generated\n")
+    print(f"{labels_csv_path} generated")
     
     # make noise rules df and save as csv
     noise_rules_df = pd.DataFrame(data=noise_rules)
     noise_rules_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_noise_rules.csv"
     noise_rules_df.to_csv(noise_rules_csv_path, index=False)
-    print(f"{noise_rules_csv_path} generated\n")
+    print(f"{noise_rules_csv_path} generated")
     
     # save the noisy train_openset_dataset_data (numpy.ndarray) taht will be loaded later into train_dataset.data
     dataset_data_npy_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.npy"
     np.save(dataset_data_npy_path, train_openset_dataset_data)
-    print(f"{dataset_data_npy_path} generated\n")
+    print(f"{dataset_data_npy_path} generated")
     
     return {
         "labels_csv_path": labels_csv_path,
@@ -228,13 +228,13 @@ def make_inherent_label_noise_sym_asym(datapath, dataset_name, noise_mode, p, se
     labels_df = pd.DataFrame(data={"label": targets.numpy(), "label_noisy": noisy_targets.numpy()})
     labels_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv"
     labels_df.to_csv(labels_csv_path, index=False)
-    print(f"{labels_csv_path} generated\n")
+    print(f"{labels_csv_path} generated")
     
     # make df of noise rules used in geenrating the noisy class labels
     noise_rules_df = pd.DataFrame(data=noise_rules)
     noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
     noise_rules_df.to_csv(noise_rules_csv_path, index=False)
-    print(f"{noise_rules_csv_path} generated\n")
+    print(f"{noise_rules_csv_path} generated")
     
     return {
         "labels_csv_path": labels_csv_path,
