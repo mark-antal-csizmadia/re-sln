@@ -1,6 +1,21 @@
+import random
+import argparse
 import matplotlib.pyplot as plt
 import torch
+from pathlib import Path
 import numpy as np
+from models.utils import load_model
+from utils import load_config
+from data import get_data
+from funcs import evaluate
+
+
+parser = argparse.ArgumentParser(description='re-sln plotting')
+parser.add_argument('--exp_id', type=str, help='experiment id', required=True)
+parser.add_argument('--plot_type', type=str, choices=["pred_probs", "sample_dissect", "tsne"], help='what plot to produce', required=True)
+
+datapath = "data/"
+
 
 
 def plot_prediction_probabilities(softmaxes, indices_noisy, title, viz_save_path=None):
@@ -32,7 +47,9 @@ def plot_prediction_probabilities(softmaxes, indices_noisy, title, viz_save_path
     plt.tight_layout()
     
     if viz_save_path:
-        plt.savefig(viz_save_path / f"{title}_prediction_probabilities.png")
+        viz_save_path = viz_save_path / f"{title}-prediction-probabilities.png"
+        plt.savefig(viz_save_path)
+        print(f"generated: {viz_save_path}")
     
     plt.show()
     
@@ -97,10 +114,14 @@ def plot_sample_dissection(train_eval_dataloader, train_original_dataloader, pre
     fig = plt.figure(figsize=(4,4))
     
     # make stairs plot
-    plt.stairs(type_4_hist, fill=True, color="r", label='lol')
-    plt.stairs(type_3_hist, fill=True, color="g", label='lol')
-    plt.stairs(type_2_hist, fill=True, color="y", label='lol')
-    plt.stairs(type_1_hist, fill=True, color="b", label='lol')
+    # 1: label x, prediction x
+    # 2: label x, prediction y
+    # 3: label y, prediction x
+    # 4: label y, prediction y
+    plt.stairs(type_4_hist, fill=True, color="r", label='$l: \checkmark, p: \checkmark$')
+    plt.stairs(type_3_hist, fill=True, color="g", label='$l: \checkmark, p: x$')
+    plt.stairs(type_2_hist, fill=True, color="y", label='$l: x, p: \checkmark$')
+    plt.stairs(type_1_hist, fill=True, color="b", label='$l: x, p: x$')
     
     # set limits to delete margins around the stair plot
     plt.xlim(0, n_bins)
@@ -110,11 +131,93 @@ def plot_sample_dissection(train_eval_dataloader, train_original_dataloader, pre
     plt.title(title)
     plt.xlabel(r"Intervals (loss $\uparrow$)")
     plt.ylabel("Number of samples")
+    plt.legend(loc="upper left")
     
     # y label is off when saved
     plt.tight_layout()
     
     if viz_save_path:
-        plt.savefig(viz_save_path / f"{title}_sample_dissection.png")
+        viz_save_path = viz_save_path / f"{title}-sample-dissection.png"
+        plt.savefig(viz_save_path)
+        print(f"generated: {viz_save_path}")
     
     plt.show()
+
+    
+if __name__ == "__main__":
+    # args parse
+    args = parser.parse_args()
+    
+    # load config of exp_id
+    try:
+        config_data = load_config(exp_id=args.exp_id)
+    except:
+        raise FileNotFoundError(f"{args.exp_id} does not seem to be a saved experiment")
+    
+    # cuda stuff
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f'using {device} device')
+    if device == "cuda":
+        print(f"using {torch.cuda.device_count()} GPU(s)")
+
+    # reproducibility
+    random.seed(config_data["seed"])
+    torch.manual_seed(config_data["seed"])
+    torch.cuda.manual_seed_all(config_data["seed"])
+    
+    # data
+    print("preparing data")
+    train_dataset, train_dataset_original, indices_noisy, noise_rules, test_dataset = get_data(
+        dataset_name=config_data["dataset_name"],
+        datapath=datapath,
+        noise_mode=config_data["noise_mode"], 
+        p=config_data["p"],
+        custom_noise=config_data["custom_noise"],
+        # never make new custom noise here
+        make_new_custom_noise=False,
+        seed=config_data["seed"]
+    )
+    # get number of classes
+    n_classes = len(list(train_dataset.class_to_idx.keys()))
+    # make targets one-hot (easier to handle in lc and sln), targets_one_hot used in lc
+    targets = train_dataset.targets
+    targets_one_hot, train_dataset.targets = np.eye(n_classes)[targets], np.eye(n_classes)[targets]
+    targets_test = test_dataset.targets
+    test_dataset.targets = np.eye(n_classes)[targets_test]
+    # train_dataloader is modified if lc is used
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=config_data["batch_size"], shuffle=True, num_workers=2)
+    # fully clean, for viz only
+    train_original_dataloader = torch.utils.data.DataLoader(train_dataset_original, batch_size=config_data["batch_size"], shuffle=True, num_workers=2)
+    # train_eval_dataloader is never modified, and is used to compute the loss weights for lc
+    train_eval_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=config_data["batch_size"], shuffle=False, num_workers=2)
+    # test_dataloader is never modified (test dataset is not onehot yet?)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=config_data["batch_size"], shuffle=False, num_workers=2)
+    
+    # load model
+    model = load_model(exp_id=args.exp_id, dataset_name=config_data["dataset_name"], n_classes=n_classes, device=device)
+    
+    # plot related things
+    viz_save_path = Path(f"assets/{args.exp_id}")
+    model_type = \
+        "ce" if config_data["sigma"] == 0 and not config_data["mo"] and config_data["lc_n_epoch"] == -1 else \
+        "sln" if 0 < config_data["sigma"] and not config_data["mo"] and config_data["lc_n_epoch"] == -1 else \
+        "sln-mo" if 0 < config_data["sigma"] and config_data["mo"] and config_data["lc_n_epoch"] == -1 else \
+        "sln-mo-lc" if 0 < config_data["sigma"] and config_data["mo"] and config_data["lc_n_epoch"] != -1 else None
+    noise_type = f"custom" if config_data['custom_noise'] else "paper"
+    title = f"{config_data['dataset_name']}-{model_type}-{config_data['noise_mode']}-{noise_type}-{config_data['p']}"
+    
+    if args.plot_type == "pred_probs":
+        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader)
+        plot_prediction_probabilities(softmaxes=softmaxes, indices_noisy=indices_noisy, title=title, viz_save_path=viz_save_path)
+        
+    elif args.plot_type == "sample_dissect":
+        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader)
+        plot_sample_dissection(
+            train_eval_dataloader=train_eval_dataloader, 
+            train_original_dataloader=train_original_dataloader, 
+            predictions=predictions, 
+            losses=losses,
+            indices_noisy=indices_noisy,
+            title=title,
+            viz_save_path=viz_save_path
+        )
