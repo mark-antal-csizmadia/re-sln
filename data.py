@@ -131,18 +131,21 @@ def make_inherent_label_noise_openset(datapath, dataset_name, noise_mode, p, see
     
     # make class labels df and save as csv
     labels_df = pd.DataFrame(data={"label": train_dataset.targets, "label_noisy": labels_noisy})
-    labels_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.csv" 
+    #labels_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.csv" 
+    labels_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"openset{p:.1f}_custom.csv")
     labels_df.to_csv(labels_csv_path, index=False)
     print(f"{labels_csv_path} generated")
     
     # make noise rules df and save as csv
     noise_rules_df = pd.DataFrame(data=noise_rules)
-    noise_rules_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_noise_rules.csv"
+    #noise_rules_csv_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_noise_rules.csv"
+    noise_rules_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"openset{p:.1f}_noise_rules.csv")
     noise_rules_df.to_csv(noise_rules_csv_path, index=False)
     print(f"{noise_rules_csv_path} generated")
     
     # save the noisy train_openset_dataset_data (numpy.ndarray) taht will be loaded later into train_dataset.data
-    dataset_data_npy_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.npy"
+    #dataset_data_npy_path = f"data/{dataset_name}/label_noisy/openset{p:.1f}_custom.npy"
+    dataset_data_npy_path = os.path.join(datapath, dataset_name, "label_noisy", f"openset{p:.1f}_custom.npy")
     np.save(dataset_data_npy_path, train_openset_dataset_data)
     print(f"{dataset_data_npy_path} generated")
     
@@ -226,13 +229,15 @@ def make_inherent_label_noise_sym_asym(datapath, dataset_name, noise_mode, p, se
         
     # make df of correct and noisy labels, and save as csv
     labels_df = pd.DataFrame(data={"label": targets.numpy(), "label_noisy": noisy_targets.numpy()})
-    labels_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv"
+    #labels_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv"
+    labels_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_custom.csv")
     labels_df.to_csv(labels_csv_path, index=False)
     print(f"{labels_csv_path} generated")
     
     # make df of noise rules used in geenrating the noisy class labels
     noise_rules_df = pd.DataFrame(data=noise_rules)
-    noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
+    #noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
+    noise_rules_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_noise_rules.csv")
     noise_rules_df.to_csv(noise_rules_csv_path, index=False)
     print(f"{noise_rules_csv_path} generated")
     
@@ -492,9 +497,16 @@ def add_inherent_label_noise(train_dataset, datapath, dataset_name, noise_mode, 
     """
     # sym or asym noise, can be from paper or custom
     if noise_mode in ["sym", "asym"]:
-        labels_csv_path = \
-            f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv" if custom else f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}.csv"
-        noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
+        #labels_csv_path = \
+        #    f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv" if custom else f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}.csv"
+        if custom:
+            labels_csv_path = \
+                os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_custom.csv")
+        else:
+            labels_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}.csv")
+        
+        #noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
+        noise_rules_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_noise_rules.csv")
         
         noise_rules = pd.read_csv(noise_rules_csv_path)
         targets_noisy = list(pd.read_csv(labels_csv_path)["label_noisy"].values.astype(int))
@@ -507,10 +519,14 @@ def add_inherent_label_noise(train_dataset, datapath, dataset_name, noise_mode, 
         print(f"labels_csv_path:{labels_csv_path}, noise_rules_csv_path:{noise_rules_csv_path}")
     # openset noise, can NOT be from paper (not published) so only custom
     elif noise_mode == "openset" and custom:
+        #labels_csv_path = \
+        #    f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv"
         labels_csv_path = \
-            f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.csv"
-        noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
-        dataset_data_npy_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.npy"
+            os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_custom.csv")
+        #noise_rules_csv_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_noise_rules.csv"
+        noise_rules_csv_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_noise_rules.csv")
+        #dataset_data_npy_path = f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}_custom.npy")
+        dataset_data_npy_path = os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}_custom.npy")
         
         noise_rules = pd.read_csv(noise_rules_csv_path)
         indices_noisy = pd.read_csv(labels_csv_path)["label_noisy"].values.astype(bool)
@@ -522,8 +538,10 @@ def add_inherent_label_noise(train_dataset, datapath, dataset_name, noise_mode, 
         print(f"labels_csv_path:{labels_csv_path}, noise_rules_csv_path:{noise_rules_csv_path}, dataset_data_npy_path:{dataset_data_npy_path}")
     # dependent is only from paper
     elif noise_mode == "dependent" and not custom:
+        #labels_csv_path = \
+        #    f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}.csv"
         labels_csv_path = \
-            f"data/{dataset_name}/label_noisy/{noise_mode}{p:.1f}.csv"
+            os.path.join(datapath, dataset_name, "label_noisy", f"{noise_mode}{p:.1f}.csv")
         noise_rules_csv_path = None
         
         noise_rules = None
@@ -667,7 +685,7 @@ class CIFAR10(Dataset):
         return data, target, index
 
     def __len__(self):
-        return len(self.cifar10)
+        return len(self.targets)
     
 
 class CIFAR100(Dataset):
@@ -690,7 +708,7 @@ class CIFAR100(Dataset):
         return data, target, index
 
     def __len__(self):
-        return len(self.cifar100)
+        return len(self.targets)
     
     
 def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custom_noise, seed):

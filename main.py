@@ -7,11 +7,12 @@ from pathlib import Path
 import random
 import datetime
 import time
+import os
 
 from models.ema import WeightEMA
 from models.utils import get_model
 from data import get_data
-from funcs import train, test, evaluate
+from funcs import train, test, evaluate, get_lc_params
 from utils import save_config
 
 # arg parse
@@ -29,7 +30,7 @@ parser.add_argument('--mo', dest='mo', action='store_true', default=False, help=
 parser.add_argument('--lc_n_epoch', type=int, default=250, help='label correction starts at this epoch (if -1, no lc)', required=True)
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0, experiments done with 123)', required=True)
 
-datapath = "data/"
+datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 
 if __name__ == "__main__":
     # args parse

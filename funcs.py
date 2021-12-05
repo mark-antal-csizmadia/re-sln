@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 
-def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs, indices_noisy):
+def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs, indices_noisy, verbose=True):
     # train mode for model e.g.: dropout, batch norm etc
     model.train()
     
@@ -21,10 +21,13 @@ def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_cl
     n_noisy_all = indices_noisy.sum()
     
     # tqdm
-    train_dataloader_tqdm = tqdm(enumerate(train_dataloader), total=n_batches,
-                                 file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
-    train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs} staring ...")
-    
+    if verbose:
+        train_dataloader_tqdm = tqdm(enumerate(train_dataloader), total=n_batches,
+                                     file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs} staring ...")
+    else:
+        train_dataloader_tqdm = enumerate(train_dataloader)
+
     for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in train_dataloader_tqdm:
         # since zero-indexed
         n_batch += 1
@@ -80,11 +83,14 @@ def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_cl
         loss_clean_epoch_sum += (batch_size - n_noisy) * loss_batch_clean.item()
         
         # tqdm
-        train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, "
-                                              f"batch={n_batch}/{n_batches}, "
-                                              f"loss_batch={loss_batch.item():.4f}, "
-                                              f"acc_batch={acc_batch.item():.4f}")
-    
+        if verbose:
+            train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, "
+                                                  f"batch={n_batch}/{n_batches}, "
+                                                  f"loss_batch={loss_batch.item():.4f}, "
+                                                  f"acc_batch={acc_batch.item():.4f}")
+        else:
+            pass
+
     # compute loss per epoch as the mean of the loss_batches
     loss_epoch = loss_epoch_sum / n_data
     loss_noisy_epoch = loss_noisy_epoch_sum / n_noisy_all
@@ -94,7 +100,7 @@ def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_cl
     
     return loss_epoch, accuracy_epoch, loss_noisy_epoch, loss_clean_epoch
 
-def test(model, device, test_dataloader, n_epoch, n_epochs):
+def test(model, device, test_dataloader, n_epoch, n_epochs, verbose=True):
     # eval mode for test
     model.eval()
     
@@ -106,9 +112,12 @@ def test(model, device, test_dataloader, n_epoch, n_epochs):
     
     # tqdm
     n_batches = len(test_dataloader)
-    test_dataloader_tqdm = tqdm(enumerate(test_dataloader), total=n_batches,
-                               file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
-    test_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, eval test set ...")
+    if verbose:
+        test_dataloader_tqdm = tqdm(enumerate(test_dataloader), total=n_batches,
+                                   file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        test_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, eval test set ...")
+    else:
+        test_dataloader_tqdm = enumerate(test_dataloader)
     
     with torch.no_grad():
         for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in test_dataloader_tqdm:
@@ -141,12 +150,15 @@ def test(model, device, test_dataloader, n_epoch, n_epochs):
             loss_sum += batch_size * loss_batch.item()
             
             # tqdm
-            test_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, eval test set: "
-                                                 f"epoch={n_epoch}/{n_epochs}, "
-                                                 f"batch={n_batch}/{n_batches}, "
-                                                 f"loss_batch={loss_batch.item():.4f}, "
-                                                 f"acc_batch={acc_batch.item():.4f}")
-            
+            if verbose:
+                test_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, eval test set: "
+                                                     f"epoch={n_epoch}/{n_epochs}, "
+                                                     f"batch={n_batch}/{n_batches}, "
+                                                     f"loss_batch={loss_batch.item():.4f}, "
+                                                     f"acc_batch={acc_batch.item():.4f}")
+            else:
+                pass
+
     # compute loss test
     loss = loss_sum / n_data
     # accuracy test
@@ -155,7 +167,7 @@ def test(model, device, test_dataloader, n_epoch, n_epochs):
     return loss, accuracy
 
 
-def evaluate(model, device, dataloader):
+def evaluate(model, device, dataloader, verbose):
     # eval mode for test
     model.eval()
     
@@ -171,9 +183,12 @@ def evaluate(model, device, dataloader):
     
     # tqdm
     n_batches = len(dataloader)
-    dataloader_tqdm = tqdm(enumerate(dataloader), total=n_batches,
-                          file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
-    dataloader_tqdm.set_description(f"eval set")
+    if verbose:
+        dataloader_tqdm = tqdm(enumerate(dataloader), total=n_batches,
+                              file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        dataloader_tqdm.set_description(f"eval set")
+    else:
+        pass
     
     with torch.no_grad():
         for n_batch, (data_batch, targets_batch_one_hot, idx) in dataloader_tqdm:
@@ -222,10 +237,13 @@ def evaluate(model, device, dataloader):
             loss_sum += batch_size * loss_batch.item()
             
             # tqdm
-            dataloader_tqdm.set_description(f"eval set: "
-                                            f"batch={n_batch}/{n_batches}, "
-                                            f"loss_batch={loss_batch.item():.4f}, "
-                                            f"acc_batch={acc_batch.item():.4f}")
+            if verbose:
+                dataloader_tqdm.set_description(f"eval set: "
+                                                f"batch={n_batch}/{n_batches}, "
+                                                f"loss_batch={loss_batch.item():.4f}, "
+                                                f"acc_batch={acc_batch.item():.4f}")
+            else:
+                pass
             
     # compute loss test
     loss = loss_sum / n_data
@@ -242,7 +260,7 @@ def evaluate(model, device, dataloader):
     return loss, accuracy, losses, softmaxes, predictions
 
 
-def get_lc_params(model_ema, train_eval_dataloader, device, n_epoch, n_epochs):
+def get_lc_params(model_ema, train_eval_dataloader, device, n_epoch, n_epochs, verbose=True):
     """ Getting lc params """
     # don't change model params, eval mode
     # notify all your layers that you are in eval mode, that way, batchnorm or dropout layers will work in eval mode instead of training mode
@@ -253,9 +271,12 @@ def get_lc_params(model_ema, train_eval_dataloader, device, n_epoch, n_epochs):
     
     # tqdm
     n_batches = len(train_eval_dataloader)
-    train_eval_dataloader_tqdm = tqdm(enumerate(train_eval_dataloader), total=n_batches,
-                                     file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
-    train_eval_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, getting lc params")
+    if verbose:
+        train_eval_dataloader_tqdm = tqdm(enumerate(train_eval_dataloader), total=n_batches,
+                                         file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        train_eval_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, getting lc params")
+    else:
+        pass
     
     # no backprop
     # impacts the autograd engine and deactivate it. It will reduce memory usage and speed 
@@ -279,7 +300,10 @@ def get_lc_params(model_ema, train_eval_dataloader, device, n_epoch, n_epochs):
             softmaxes.append(softmax_batch.to("cpu").numpy())
             
             # tqdm
-            train_eval_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, getting lc params, batch={n_batch}/{n_batches}")
+            if verbose:
+                train_eval_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, getting lc params, batch={n_batch}/{n_batches}")
+            else:
+                pass
     
     # loss per instance
     losses = torch.reshape(torch.tensor(np.concatenate(losses)), (n_data,))
