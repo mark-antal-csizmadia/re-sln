@@ -1,0 +1,13 @@
+batch_size: 128
+custom_noise: true
+dataset_name: cifar10
+exp_id: exp_2021-12-04 20:17:35.698730
+lc_n_epoch: -1
+lr: 0.001
+make_new_custom_noise: false
+mo: false
+n_epochs: 300
+noise_mode: sym
+p: 0.4
+seed: 123
+sigma: 0.4
