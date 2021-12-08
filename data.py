@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,8 +37,12 @@ def get_normalization_params(dataset_name, datapath):
         means = train_dataset.data.mean(axis=(0,1,2)) / 255.0
         # the std of each pixel
         stds = train_dataset.data.std(axis=(0,1,2)) / 255.0
-    elif dataset_name == "clothing1m":
-        pass
+    elif dataset_name == "animal-10n":
+        train_dataset = Animal10N(root=os.path.join(datapath, dataset_name), train=True, transform=transforms.ToTensor())
+        # the mean of each pixel
+        means = train_dataset.data.mean(axis=(0,1,2)) / 255.0
+        # the std of each pixel
+        stds = train_dataset.data.std(axis=(0,1,2)) / 255.0
     else:
         raise Exception
 
@@ -617,7 +622,7 @@ def show_imgs(datapath, dataset_name, train_dataset, noise_mode, indices_noisy, 
             sample_idx = np.random.choice(indices_clean_args, 1, replace=False)[0]
         
         # get clean image and label for sample indices
-        img, label = train_dataset_viz[sample_idx]
+        img, label, _ = train_dataset_viz[sample_idx]
         figure.add_subplot(rows, cols, i)
         
         # if noisy, add clean label too
@@ -631,6 +636,55 @@ def show_imgs(datapath, dataset_name, train_dataset, noise_mode, indices_noisy, 
         # clean
         else:
             plt.title(f"clean:{class_to_idx_list[label]}")
+            
+        plt.axis("off")
+        # pytorch has dimension differently from what plt expects so permute first
+        plt.imshow(img.permute(1, 2, 0))
+    
+    plt.show()
+    
+
+def show_imgs_real(datapath, dataset_name, train_dataset, seed):
+    """ Show image from a real-world noisy dataset. 
+    
+    Parameters
+    ----------
+    datapath : str
+        Path to downloaded data sets.
+    dataset_name : str
+        Name of the dataset.
+    train_dataset : torchvision.datasets.x.x
+        The training dataset split, e.g.: torchvision.datasets.cifar.CIFAR10
+    noise_mode : str
+        sym, asym, openset, dependent
+    
+    Returns
+    -------
+    None
+    """
+    # get the clean class labels in the taining dataset
+    class_to_idx_list=list(train_dataset.class_to_idx.keys())
+    
+    # load the same training dataset for visualization pruposes
+    if dataset_name == "animal-10n":
+        train_dataset_viz = Animal10N(root=os.path.join(datapath, dataset_name), train=True, transform=transforms.ToTensor())
+    else:
+        raise Exception
+    
+    # plt stuff
+    figure = plt.figure(figsize=(8*3, 8))
+    cols, rows = 4*2, 4
+    half = int(cols * rows / 2)
+    
+    # plot images
+    for i in range(1, cols * rows + 1):
+        np.random.seed(seed+i)
+        sample_idx = np.random.choice(np.arange(train_dataset_viz.data.shape[0]), 1, replace=False)[0]
+        
+        img, label, _ = train_dataset_viz[sample_idx]
+        figure.add_subplot(rows, cols, i)
+        
+        plt.title(f"{class_to_idx_list[label]}")
             
         plt.axis("off")
         # pytorch has dimension differently from what plt expects so permute first
@@ -758,7 +812,95 @@ def get_data(dataset_name, datapath, noise_mode, p, custom_noise, make_new_custo
             p=p, 
             seed=seed
         )
-
+    
     train_dataset, indices_noisy, noise_rules = add_inherent_label_noise(train_dataset, datapath, dataset_name, noise_mode, p, custom_noise)
+
     
     return train_dataset, train_dataset_original, indices_noisy, noise_rules, test_dataset
+
+
+class Animal10N(Dataset):
+    def __init__(self, root, train, transform):
+        self.train = train
+        self.path_annotations = root / Path("training.csv") if train else root / Path("testing.csv")
+        self.annotations_df = pd.read_csv(self.path_annotations)
+        self.length = self.annotations_df.shape[0]
+        self.img_dir = root / Path("training") if train else root / Path("testing")
+        self.transform = transform
+        self.data, self.targets = self.get_data_and_targets()
+        self.class_to_idx = {
+            "cat": 0,
+            "lynx": 1,
+            "wolf": 2,
+            "coyote": 3,
+            "cheetah": 4,
+            "jaguer": 5,
+            "chimpanzee": 6,
+            "orangutan": 7,
+            "hamster": 8,
+            "guinea pig": 9
+        }
+    
+    def get_data_and_targets(self, ):
+        data = []
+        targets = []
+        
+        for index in range(self.length):
+            img_path = Path(self.img_dir) / Path(self.annotations_df.iloc[index]["img_paths"])
+            img = np.asarray(Image.open(img_path))
+            data.append(img)
+            target = self.annotations_df.iloc[index]["targets"]
+            targets.append(target)
+        
+        return np.array(data), targets
+    
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, index):
+        data = self.transform(Image.fromarray(self.data[index]))
+        target = self.targets[index]
+            
+        return data, target, index
+    
+    def __repr__(self, ):
+        return f"Animal-10N dataset, {'training set' if self.train else 'testing set'}, of {self.length} images"
+
+
+def make_annotations_animals10n(data_dir):
+    datasets = ["training", "testing"]
+
+    for dataset in datasets:
+        img_paths = []
+        targets = []
+
+        # List all files in a directory using os.listdir
+        basepath = data_dir / Path(dataset)
+        for entry in os.listdir(basepath):
+            if os.path.isfile(os.path.join(basepath, entry)):
+                targets.append(entry.split("_")[0])
+                img_paths.append(entry)
+
+        df = pd.DataFrame(data={"img_paths": img_paths, "targets": targets})
+        path_csv = Path(f"data/animal-10n/{dataset}.csv")
+        df.to_csv(path_csv ,index=False)
+
+
+def get_data_real(dataset_name, datapath):
+    make_annotations_animals10n(data_dir=os.path.join(datapath, dataset_name))
+    assert dataset_name == "animal-10n"
+    means, stds = get_normalization_params(dataset_name=dataset_name, datapath=datapath)
+
+    train_transform = transforms.Compose([transforms.Resize(32),
+                                          transforms.RandomCrop(32, padding=4),
+                                          transforms.RandomHorizontalFlip(),
+                                          transforms.ToTensor(),
+                                          transforms.Normalize(means, stds)])
+
+    test_transform = transforms.Compose([transforms.Resize(32), transforms.ToTensor(), transforms.Normalize(means, stds)])
+    
+    train_dataset = Animal10N(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform)
+    train_dataset_original = Animal10N(root=os.path.join(datapath, dataset_name), train=True, transform=train_transform)
+    test_dataset = Animal10N(root=os.path.join(datapath, dataset_name), train=False, transform=test_transform)
+    
+    return train_dataset, train_dataset_original, test_dataset

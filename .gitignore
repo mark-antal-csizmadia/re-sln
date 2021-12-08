@@ -144,3 +144,7 @@ data/cifar100/cifar-100-python/
 data/cifar100/cifar-100-python.tar.gz
 *.npy
 
+data/animal-10n/testing/
+data/animal-10n/training/
+data/animal-10n/raw_image_ver.zip
+data/animal-10n/raw_image.zip
