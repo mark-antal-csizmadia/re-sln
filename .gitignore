@@ -144,3 +144,5 @@ data/cifar100/cifar-100-python/
 data/cifar100/cifar-100-python.tar.gz
 *.npy
 
+# pycharm
+.idea/
