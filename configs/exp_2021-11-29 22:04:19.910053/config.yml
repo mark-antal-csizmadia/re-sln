@@ -1,0 +1,13 @@
+batch_size: 128
+custom_noise: false
+dataset_name: cifar100
+exp_id: exp_2021-11-29 22:04:19.910053
+lc_n_epoch: 250
+lr: 0.001
+make_new_custom_noise: false
+mo: true
+n_epochs: 300
+noise_mode: sym
+p: 0.4
+seed: 123
+sigma: 0.2
