@@ -9,7 +9,34 @@ Make a virtual env and isntall dependencies from the ```environment.yml``` file.
 ## Data
 
 Data is at data/.
-EXPLAIN MORE
+
+### Download
+
+Cifar10 and 1000 automatically downloaded with PyTorch.
+
+Download animals data from [Animal-10N](https://dm.kaist.ac.kr/datasets/animal-10n/). After filling out a form, you get an email and get the ```raw image ver``` (called ```raw_image_ver.zip```) version, ```mkdir animal-10n``` and then put at data/animal-10n/raw_image_ver.zip. Then ```unzip raw_image_ver.zip``` and then ```unzip raw_image.zip``` that yields a folder structure data/animal-10n/training and data/animal-10n/testing with images. Then the animal trainign script takes care of extracting the annotations from the image file names (see data.py -> make_annotations_animals10n)
+
+### Visualize
+
+CIFAR-10 sym/asym, from paper or custom
+```
+python viz.py cifar10 --noise_mode [sym, asym] [--custom_noise] --p 0.4 --seed 123
+```
+CIFAR-10 dependent from paper
+```
+python viz.py cifar10 --noise_mode dependent --p 0.4 --seed 123
+```
+CIFAR-10 openset custom
+```
+python viz.py cifar10 --noise_mode openset --custom_noise --p 0.4 --seed 123
+```
+Note that if ```data/cifar10/label_noisy/openset0.4_custom.npy``` has not been yet generated, it has to be first. See Bugs.
+
+Animal
+```
+python viz.py animal-10n --seed 123
+```
+
 
 ## Run
 
@@ -73,11 +100,11 @@ python train_real.py --dataset_name animal-10n --batch_size 128 --n_epochs 300 -
 
 ### Configs
 
-All experiments' models and training setup config parameters are saved at configs/.
+All experiments' models and training setup config parameters are saved at configs/ in YAML format.
 
 ### Plotting (Only CIFAR-10 and CIFAR-100)
 
-All plots are in asseets/.
+All plots are in assets/.
 
 Plot prediction probabilities for noisy and clear samples.
 ```commandline
@@ -87,6 +114,15 @@ python plot.py --exp_id "exp_2021-12-08 11:28:45.265396" --plot_type pred_probs
 Plot sample dissection from paper:
 ```commandline
 python plot.py --exp_id "exp_2021-12-08 11:28:45.265396" --plot_type sample_dissect
+```
+
+## Hyperparameter Search of Sigma
+
+The best sigma is searched for in the grid 0.1, 0.2, 0.5, and 1.0, as discussed in the paper. Note that the tune.py script needs 4 CPUs and 2 GPUs to run. If needed, the script can be changed to accomodate for less computational resources. The hyperparameter search uses Ray Tune, a distributed machine learning framework.
+
+Example: Tune an SLN model on CIFAR-10 with the noise provided b the authors, with a validation size of 10 % (5000 noisy samples, as discussed in the paper). In the paper, only SLN models are tuned since MO and LC can hide the effect of sigma potentially.  
+```
+python tune.py --dataset_name cifar10 --batch_size 128 --n_epochs 300 --lr 0.001 --noise_mode sym --p 0.4 --lc_n_epoch -1 --val_size 0.1 --seed 123
 ```
 
 ## Example Inherent Noise in Labels
@@ -101,7 +137,7 @@ Naturally noisy.
 
 ## Experiments and Results
 
-### Experiments
+### CIFAR-10
 
 Available models: CE, SLN, SLN+MO, SLN+MO+LC
 Available noisy data sets for CIFAR-10 (p=0.4): sym (paper, mine), asym (paper, mine), dependent (paper), openset (paper, mine)
@@ -118,6 +154,7 @@ Training Times per Computational Resources
 - exp_2021-11-25 13:17:26.851200: 1 h 31 m with 1 x V100
 get times and final test accs from runs/
 
+### CIFAR-100
 ---
 Cifar100
 20 EXP
@@ -129,6 +166,8 @@ Cifar100
 |  SLN+MO | exp_2021-11-29 13:16:11.590910 | exp_2021-11-29 22:15:08.652843 | exp_2021-12-02 17:39:34.952358 | exp_2021-12-03 11:53:37.290785 | exp_2021-12-03 14:43:27.237441 | x | x | x |
 | SLN+MO+LC | exp_2021-11-29 22:04:19.910053 | exp_2021-11-29 22:26:18.532929 | exp_2021-12-02 20:43:32.204172 | exp_2021-12-03 12:01:04.662910 | exp_2021-12-03 14:51:11.441549 | x | x | x |
 
+
+### Hyperparamet Search For Sigam on CIFAR-10
 ---
 HP search
 
@@ -154,6 +193,8 @@ sigma = 1.8: exp_2021-12-08 11:28:45.265396 | exp_2021-12-08 11:29:11.334586
 sigma = 2.0: exp_2021-12-08 13:04:50.380869 | exp_2021-12-08 13:01:27.453031
 ---
 
+### SLN in the Wild: Animals-10N
+
 Animals-10n
 
 6 EXP
@@ -170,8 +211,31 @@ sigma = 0.5
 
 All logs are in runs/.
 
-Tensorboard is used for logging. Share your logs as shown below (from [here](https://pytorch.org/tutorials/recipes/recipes/tensorboard_with_pytorch.html#share-tensorboard-dashboards)):
+Viw the logs locally as:
+```
+tensorboard --logdir runs
+```
+
+or on [Tensorboard.dev](https://pytorch.org/tutorials/recipes/recipes/tensorboard_with_pytorch.html#share-tensorboard-dashboards)):
 ```
 tensorboard dev upload --logdir runs --name "re-sln results" --description "By Mark"
 ```
 
+
+## Bugs
+
+For instance for
+```
+python viz.py cifar10 --noise_mode openset --custom_noise --p 0.4 --seed 123
+```
+or
+```
+python train_cifar.py --dataset_name cifar10 --batch_size 128 --n_epochs 1 --lr 0.001 --noise_mode openset --custom_noise --p 0.4 --sigma 0 --lc_n_epoch -1 --seed 123
+```
+
+FileNotFoundError: [Errno 2] No such file or directory: '/home/jupyter/final/re-sln/data/cifar10/label_noisy/openset0.4_custom.npy'
+
+generate openset first by  a quick 1 epoch training on cifar10 (since opsent is only for cifar10)
+```
+python train_cifar.py --dataset_name cifar10 --batch_size 128 --n_epochs 1 --lr 0.001 --noise_mode openset --custom_noise --make_new_custom_noise --p 0.4 --sigma 0 --lc_n_epoch -1 --seed 123
+```

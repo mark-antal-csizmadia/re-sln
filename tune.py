@@ -204,7 +204,7 @@ if __name__ == "__main__":
     # args parse
     args = parser.parse_args()
     
-    assert os.cpu_count() == 4 and torch.cuda.device_count() == 2, f"this script needs to be changed fi not used with 4 cpus and 2 gpus"
+    assert os.cpu_count() == 4 and torch.cuda.device_count() == 2, f"this script needs to be changed if not used with 4 cpus and 2 gpus"
     
     # device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
