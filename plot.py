@@ -55,6 +55,8 @@ def plot_prediction_probabilities(softmaxes, indices_noisy, title, viz_save_path
     
     
 def plot_sample_dissection(train_eval_dataloader, train_original_dataloader, predictions, losses, indices_noisy, title, viz_save_path):
+    viz_save_path.mkdir(parents=True, exist_ok=True)
+    
     # https://matplotlib.org/stable/gallery/lines_bars_and_markers/stairs_demo.html
     n_data = len(train_eval_dataloader.dataset)
     
@@ -207,11 +209,11 @@ if __name__ == "__main__":
     title = f"{config_data['dataset_name']}-{model_type}-{config_data['noise_mode']}-{noise_type}-{config_data['p']}"
     
     if args.plot_type == "pred_probs":
-        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader)
+        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader, verbose=True)
         plot_prediction_probabilities(softmaxes=softmaxes, indices_noisy=indices_noisy, title=title, viz_save_path=viz_save_path)
         
     elif args.plot_type == "sample_dissect":
-        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader)
+        loss, accuracy, losses, softmaxes, predictions = evaluate(model=model, device=device, dataloader=train_eval_dataloader, verbose=True)
         plot_sample_dissection(
             train_eval_dataloader=train_eval_dataloader, 
             train_original_dataloader=train_original_dataloader, 

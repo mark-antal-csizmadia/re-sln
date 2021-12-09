@@ -343,9 +343,11 @@ dependencies:
     - beatrix-jupyterlab==3.1.3
     - catalogue==2.0.6
     - cymem==2.0.5
+    - deprecated==1.2.13
     - fastai==2.4
     - fastcore==1.3.26
     - fastprogress==1.0.0
+    - filelock==3.4.0
     - google-cloud-aiplatform==1.6.0
     - google-cloud-appengine-logging==0.2.0
     - google-cloud-audit-log==0.1.1
@@ -370,20 +372,25 @@ dependencies:
     - grpc-google-iam-v1==0.12.3
     - jupyter-http-over-ws==0.0.8
     - libcst==0.3.21
+    - msgpack==1.0.3
     - murmurhash==1.0.5
     - notebook-executor==0.2
     - pathy==0.6.0
     - preshed==3.0.5
     - proto-plus==1.19.5
     - pyarrow==5.0.0
+    - ray==1.9.0
+    - redis==4.0.2
     - retrying==1.3.3
     - smart-open==5.2.1
     - spacy==3.1.3
     - spacy-legacy==3.0.8
     - srsly==2.4.1
+    - tabulate==0.8.9
     - tensorboard==2.7.0
     - tensorboard-data-server==0.6.1
     - tensorboard-plugin-wit==1.8.0
+    - tensorboardx==2.4.1
     - thinc==8.0.11
     - torchvision==0.10.0+cu111
     - typer==0.4.0

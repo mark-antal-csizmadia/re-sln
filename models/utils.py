@@ -13,7 +13,7 @@ def get_model(model_name, n_classes, device):
 
 def load_model(exp_id, dataset_name, n_classes, device):
     # get models for naive and ema (depends on dataset)
-    model_name = "wrn-28-2" if dataset_name in ["cifar10", "cifar100"] else "MODEL_NAME_FOR_CLOTHING1M"
+    model_name = "wrn-28-2" if dataset_name in ["cifar10", "cifar100", "animal-10n"] else "MODEL_NAME_FOR_CLOTHING1M"
     model = get_model(model_name=model_name, n_classes=n_classes, device=device)
     # if multi gpu
     if device == "cuda":

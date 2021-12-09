@@ -100,6 +100,91 @@ def train(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_cl
     
     return loss_epoch, accuracy_epoch, loss_noisy_epoch, loss_clean_epoch
 
+
+def train_real(model, device, train_dataloader, optimizer, optimizer_ema, sigma, n_classes, n_epoch, n_epochs, verbose=True):
+    # train mode for model e.g.: dropout, batch norm etc
+    model.train()
+    
+    # record loss per epoch
+    loss_epoch_sum = 0.0
+    correct_predictions_epoch_sum = 0
+    
+    # n instances in training set
+    n_batches = len(train_dataloader)
+    n_data = len(train_dataloader.dataset)
+    
+    # tqdm
+    if verbose:
+        train_dataloader_tqdm = tqdm(enumerate(train_dataloader), total=n_batches,
+                                     file=sys.stdout, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs} staring ...")
+    else:
+        train_dataloader_tqdm = enumerate(train_dataloader)
+
+    for n_batch, (data_batch, targets_batch_one_hot, idx_batch) in train_dataloader_tqdm:
+        # since zero-indexed
+        n_batch += 1
+        batch_size = data_batch.size(0)
+        assert len(targets_batch_one_hot.size()) == 2
+        # make list of integer targets from one-hot (accuracy calculations)
+        targets_batch = targets_batch_one_hot.argmax(dim=1)
+        # put data and targets onto device
+        data_batch, targets_batch_one_hot, targets_batch = data_batch.to(device), targets_batch_one_hot.to(device), targets_batch.to(device)
+        
+        # if SLN/SLN-MO/SLN-MO-LC model
+        if 0 < sigma:
+            # make and add to targets sln of shape targets_batch_one_hot.size() = (batch_size, n_classes)
+            targets_batch_one_hot += sigma*torch.randn(targets_batch_one_hot.size()).to(device)
+        else:
+            pass
+        
+        # get model logits
+        logits_batch = model(data_batch)
+        # get cross entropy (ce) loss, i.e.: negative log-lieklihood
+        # use log of softmax for numerical stability and calucalte the cross entropy loss manually
+        losses_batch = -torch.sum(F.log_softmax(logits_batch, dim=1)*targets_batch_one_hot, dim=1)
+        loss_batch = torch.mean(losses_batch)
+        
+        # get predictions
+        predictions_batch = logits_batch.argmax(dim=1, keepdim=True).to(device)
+        # get correct predictions (boolean vector, True if correct), view predictions_batch as targets_batch
+        correct_predictions_batch = predictions_batch.view_as(targets_batch).eq(targets_batch)
+        correct_predictions_epoch_sum += correct_predictions_batch.sum().item()
+        # accuracy of batch
+        acc_batch = correct_predictions_batch.sum() / batch_size
+        
+        # zero out grads, b default their are accumulated over steps
+        optimizer.zero_grad()
+        # backprop to obtain grads for model params
+        loss_batch.backward()
+        # apply model params
+        optimizer.step()
+        # if SLN-MO/SLN-MO-LC model
+        if optimizer_ema:
+            # no zero grad as custom optimizer, see its class
+            optimizer_ema.step()
+        
+        # accumulate loss per batch, i.e.: add the loss per batch batch_size times
+        # eventually mean is computed loss is computed by dividing by the datset size
+        loss_epoch_sum += batch_size * loss_batch.item()
+        
+        # tqdm
+        if verbose:
+            train_dataloader_tqdm.set_description(f"epoch={n_epoch}/{n_epochs}, "
+                                                  f"batch={n_batch}/{n_batches}, "
+                                                  f"loss_batch={loss_batch.item():.4f}, "
+                                                  f"acc_batch={acc_batch.item():.4f}")
+        else:
+            pass
+
+    # compute loss per epoch as the mean of the loss_batches
+    loss_epoch = loss_epoch_sum / n_data
+    # accuracy epoch
+    accuracy_epoch = correct_predictions_epoch_sum / n_data
+    
+    return loss_epoch, accuracy_epoch
+
+
 def test(model, device, test_dataloader, n_epoch, n_epochs, verbose=True):
     # eval mode for test
     model.eval()
