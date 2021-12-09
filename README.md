@@ -154,7 +154,6 @@ Training Times per Computational Resources
 - exp_2021-11-25 13:17:26.851200: 1 h 31 m with 1 x V100
 get times and final test accs from runs/
 
-### CIFAR-100
 ---
 Cifar100
 20 EXP
@@ -167,15 +166,13 @@ Cifar100
 | SLN+MO+LC | exp_2021-11-29 22:04:19.910053 | exp_2021-11-29 22:26:18.532929 | exp_2021-12-02 20:43:32.204172 | exp_2021-12-03 12:01:04.662910 | exp_2021-12-03 14:51:11.441549 | x | x | x |
 
 
-### Hyperparamet Search For Sigam on CIFAR-10
----
 HP search
 
 cifar10, sym, noise from paper: hp_2021-12-03_13-18-02 (sigma=[0.1, 0.2, 0.5, 1.0]) -> best 1.0 (good)
 cifar10, sym, custom noise: hp_2021-12-04_17-04-54 (sigma=[0.1, 0.2, 0.5, 1.0]) -> best 1.0 (good)
 cifar10, asym, noise from paper: hp_2021-12-05_10-55-09 (sigma=[0.1, 0.2, 0.5, 1.0]) -> 0.2 (0.5 in paper)
 cifar10, asym, custom noise, hp_2021-12-05_14-46-12 (sigma=[0.1, 0.2, 0.5, 1.0]) -> ?
----
+
 ablation:
 cifar10, sym
 +18 EXP
@@ -191,9 +188,7 @@ sigma = 1.4: exp_2021-12-06 21:07:47.205424 | exp_2021-12-06 21:07:59.931017
 sigma = 1.6: exp_2021-12-07 20:08:48.682079 | exp_2021-12-07 20:09:03.085870
 sigma = 1.8: exp_2021-12-08 11:28:45.265396 | exp_2021-12-08 11:29:11.334586
 sigma = 2.0: exp_2021-12-08 13:04:50.380869 | exp_2021-12-08 13:01:27.453031
----
 
-### SLN in the Wild: Animals-10N
 
 Animals-10n
 
