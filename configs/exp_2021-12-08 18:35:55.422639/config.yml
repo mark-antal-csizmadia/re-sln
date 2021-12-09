@@ -1,0 +1,13 @@
+batch_size: 128
+custom_noise: null
+dataset_name: animal-10n
+exp_id: exp_2021-12-08 18:35:55.422639
+lc_n_epoch: 250
+lr: 0.001
+make_new_custom_noise: null
+mo: true
+n_epochs: 300
+noise_mode: null
+p: null
+seed: 123
+sigma: 0.5
