@@ -766,7 +766,7 @@ if __name__ == "__main__":
         ],
     }
     df_table_cifar100 = pd.DataFrame(data=data_cifar100)
-    table_name = "c10-test-acc-table.csv"
+    table_name = "c100-test-acc-table.csv"
     df_table_cifar100.to_csv(os.path.join(results_path, table_name))
     
     # c100 ce train losses
@@ -941,3 +941,17 @@ if __name__ == "__main__":
     plt.tight_layout()
     fig_name = "animal10n-test-acc-zoom.png"
     plt.savefig(os.path.join(results_path, fig_name))
+    
+    # animal test acc table
+    data_animal = {
+        "model": ["ce", "sln", "sln-mo", "sln-mo-lc"],
+        "real noise": [
+            str(round(animal_ce_mean*100,2))+u"\u00B1"+str(round(animal_ce_std*100,2)),
+            str(round(animal_sln_mean*100,2))+u"\u00B1"+str(round(animal_sln_std*100,2)),
+            str(round(animal_sln_mo_mean*100,2))+u"\u00B1"+str(round(animal_sln_mo_std*100,2)),
+            str(round(animal_sln_mo_lc_mean*100,2))+u"\u00B1"+str(round(animal_sln_mo_lc_std*100,2)),
+        ],
+    }
+    df_table_animal = pd.DataFrame(data=data_animal)
+    table_name = "animal10n-test-acc-table.csv"
+    df_table_animal.to_csv(os.path.join(results_path, table_name))
