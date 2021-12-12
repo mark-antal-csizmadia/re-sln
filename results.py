@@ -1,5 +1,6 @@
 import argparse
 import os
+from copy import deepcopy
 import pandas as pd
 from matplotlib import pyplot as plt
 import tensorboard as tb
@@ -10,6 +11,7 @@ parser = argparse.ArgumentParser(description='re-sln results')
 parser.add_argument('--experiment_id', type=str, help='the TensorboardDEV experiment id', required=True)
 
 results_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "results")
+hp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hp")
 
 experiments = \
 {
@@ -212,6 +214,75 @@ suffixes = \
 }
 
 
+hp = \
+    {
+    "cifar10":
+        {
+            "sln":
+                {
+                    "sym":
+                        {
+                            "hp_2021-12-03_13-18-02":
+                                {
+                                    "0.1": "hp_71b1c_00000_0_sigma=0.1_2021-12-03_13-18-03",
+                                    "0.2": "hp_71b1c_00001_1_sigma=0.2_2021-12-03_13-18-03",
+                                    "0.5": "hp_71b1c_00002_2_sigma=0.5_2021-12-03_13-18-03",
+                                    "1.0": "hp_71b1c_00003_3_sigma=1.0_2021-12-03_15-11-40"
+                                },
+                            "hp_2021-12-04_17-04-54":
+                                {
+                                    "0.1": "hp_4d8ac_00000_0_sigma=0.1_2021-12-04_17-04-55",
+                                    "0.2": "hp_4d8ac_00001_1_sigma=0.2_2021-12-04_17-04-55",
+                                    "0.5": "hp_4d8ac_00002_2_sigma=0.5_2021-12-04_17-04-55",
+                                    "1.0": "hp_4d8ac_00003_3_sigma=1.0_2021-12-04_18-59-42"
+                                }
+                        },
+                    "asym":
+                        {
+                            "hp_2021-12-05_10-55-09":
+                                {
+                                    "0.1": "hp_d09c0_00000_0_sigma=0.1_2021-12-05_10-55-10",
+                                    "0.2": "hp_d09c0_00001_1_sigma=0.2_2021-12-05_10-55-10",
+                                    "0.5": "hp_d09c0_00002_2_sigma=0.5_2021-12-05_10-55-10",
+                                    "1.0": "hp_d09c0_00003_3_sigma=1.0_2021-12-05_12-44-35"
+                                },
+                            "hp_2021-12-05_14-46-12":
+                                {
+                                    "0.1": "hp_17553_00000_0_sigma=0.1_2021-12-05_14-46-12",
+                                    "0.2": "hp_17553_00001_1_sigma=0.2_2021-12-05_14-46-12",
+                                    "0.5": "hp_17553_00002_2_sigma=0.5_2021-12-05_14-46-12",
+                                    "1.0": "hp_17553_00003_3_sigma=1.0_2021-12-05_16-35-42"
+                                }
+                        }
+                }
+        }
+}
+
+ablation_runs = \
+{
+    "cifar10":
+        {
+            "sln":
+                {
+                    "symmetric": 
+                        {
+                            "0.0": ["exp_2021-11-25 13:17:26.851200", "exp_2021-11-25 20:30:28.794160"],
+                            "0.2": ["exp_2021-12-04 18:44:30.809125", "exp_2021-12-04 18:45:29.413332"],
+                            "0.4": ["exp_2021-12-04 20:16:53.822991", "exp_2021-12-04 20:17:35.698730"],
+                            "0.6": ["exp_2021-12-05 10:32:08.543830", "exp_2021-12-05 10:33:02.145316"],
+                            "0.8": ["exp_2021-12-05 14:47:21.250193", "exp_2021-12-05 14:47:51.111383"],
+                            "1.0": ["exp_2021-11-25 15:38:09.361059", "exp_2021-11-25 20:31:37.546765"],
+                            "1.2": ["exp_2021-12-05 17:40:34.580201", "exp_2021-12-05 17:41:13.978731"],
+                            "1.4": ["exp_2021-12-06 21:07:47.205424", "exp_2021-12-06 21:07:59.931017"],
+                            "1.6": ["exp_2021-12-07 20:08:48.682079", "exp_2021-12-07 20:09:03.085870"],
+                            "1.8": ["exp_2021-12-08 11:28:45.265396", "exp_2021-12-08 11:29:11.334586"],
+                            "2.0": ["exp_2021-12-08 13:04:50.380869", "exp_2021-12-08 13:01:27.453031"]
+                        },
+                }
+        }
+}
+
+
 def get_accuracy(dataset_name, model, noise_mode, if_train):
     if_train_str = "train" if if_train else "test"
     
@@ -278,6 +349,7 @@ def get_loss_train(dataset_name, model, noise_mode, loss_type):
                 df["tag"] == tags["loss"]["train"])]["value"])
     return e
 
+
 def get_loss_test(dataset_name, model, noise_mode):
     if_train_str = "train" if if_train else "test"
     
@@ -299,6 +371,77 @@ def get_loss_test(dataset_name, model, noise_mode):
                 df["tag"] == tags["loss"]["test"])]["value"])
     
     return e
+
+
+def get_hp_table(results_path, hp_path, noise_mode):
+    model = "sln"
+    dataset_name = "cifar10"
+    hp_results = deepcopy(hp)
+    progress_table_name = "progress.csv"
+    experiments = hp[dataset_name][model][noise_mode]
+    
+    for exp_id in experiments.keys():
+        exp_path = os.path.join(hp_path, exp_id)
+
+        for exp, path in experiments[exp_id].items():
+            trial_path = os.path.join(exp_path, path)
+            trial_table_path = os.path.join(trial_path, progress_table_name)
+            df_trial = pd.read_csv(trial_table_path)
+            hp_results[dataset_name][model][noise_mode][exp_id][exp] = list(df_trial["accuracy_val"])[-1]*100
+        
+    experiment_results = hp_results[dataset_name][model][noise_mode]
+    
+    df = pd.DataFrame(data=experiment_results)
+    df["mean"] = df.mean(axis=1)
+    df["std"] = df.std(axis=1)
+    
+    table_name = f"hp_{dataset_name}_{model}_{noise_mode}.csv"
+    path_save = os.path.join(results_path, table_name)
+    df.to_csv(path_save, float_format='%.2f')
+    
+    
+def get_ablation_results(df, results_path):
+    dataset_name = "cifar10"
+    model = "sln"
+    noise_mode = "symmetric"
+    data = {}
+    
+    steps = np.round(np.arange(0,2.2,0.2),2)
+    
+    for step in steps:
+        e1 = \
+            np.array(df[np.logical_and(
+                df["run"] == ablation_runs[dataset_name][model][noise_mode][str(step)][0], 
+                df["tag"] == tags["accuracy"]["test"])]["value"])*100
+        e2 = \
+            np.array(df[np.logical_and(
+                df["run"] == ablation_runs[dataset_name][model][noise_mode][str(step)][1], 
+                df["tag"] == tags["accuracy"]["test"])]["value"])*100
+        
+        e = (e1 + e2) / 2
+        mean = e[-1]
+        std = np.sqrt(((mean - e1[-1])**2 + (mean - e2[-1])**2)/2)
+        data[str(step)] = {"mean": mean, "std": std}
+    
+    df_res = pd.DataFrame(data=data)
+    
+    step_max = steps[np.argmax(np.array(df_res.iloc[0]))]
+    val_max = np.max(np.array(df_res.iloc[0]))
+    
+    table_name = f"ablation_{dataset_name}_{model}_{noise_mode}.csv"
+    df_res.to_csv(os.path.join(results_path, table_name), float_format='%.2f')
+    
+    plt.figure(figsize=(6,4))
+    plt.errorbar(x=steps, y=df_res.iloc[0], yerr=df_res.iloc[1], label="sym")
+    plt.plot(step_max, val_max, color="blue", marker="o")
+    plt.xlabel(r"$\sigma$")
+    plt.ylabel("Test Accuracy")
+    plt.title(r"Ablation on CIFAR-10 with SLN: the performance of SLN w.r.t. $\sigma$")
+    plt.legend(bbox_to_anchor=(1.04, 1), borderaxespad=0)
+    plt.tight_layout()
+    fig_name = "ablation-c10-sln-sym.png"
+    plt.savefig(os.path.join(results_path, fig_name))
+    
 
 
 if __name__ == "__main__":
@@ -467,8 +610,6 @@ if __name__ == "__main__":
     df_table_cifar10 = pd.DataFrame(data=data_cifar10)
     table_name = "c10-test-acc-table.csv"
     df_table_cifar10.to_csv(os.path.join(results_path, table_name))
-    
-    print("results have been generated")
     
     # c10 ce training losses
 
@@ -955,3 +1096,12 @@ if __name__ == "__main__":
     df_table_animal = pd.DataFrame(data=data_animal)
     table_name = "animal10n-test-acc-table.csv"
     df_table_animal.to_csv(os.path.join(results_path, table_name))
+    
+    # hp search for best sigma on cifar10
+    get_hp_table(results_path=results_path, hp_path=hp_path, noise_mode="sym")
+    get_hp_table(results_path=results_path, hp_path=hp_path, noise_mode="asym")
+
+    print("results have been generated")
+    
+    # c10 sym ablation study wih sln only
+    get_ablation_results(df=df, results_path=results_path)
